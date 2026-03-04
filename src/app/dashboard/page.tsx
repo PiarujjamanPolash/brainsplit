@@ -13,6 +13,7 @@ import { ArrowUpRight, ArrowDownRight, Wallet, Plus, TrendingUp, Globe, Coins } 
 import { cn, formatCurrency } from '@/lib/utils';
 import { getAgency, getTransactions, getSettlements } from '@/lib/mock-db';
 import { getUSDToBDTRate, convertToBDT } from '@/lib/fx';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 
 export default function DashboardPage() {
   const [data, setData] = useState<{
@@ -248,6 +249,7 @@ export default function DashboardPage() {
         </main>
       </div>
       <MobileNav />
+      <PWAInstallPrompt />
     </div>
   );
 }

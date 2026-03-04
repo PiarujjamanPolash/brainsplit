@@ -70,7 +70,7 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 z-50 flex w-full justify-around border-t bg-card py-2 md:hidden">
+    <nav className="fixed bottom-0 left-0 z-50 flex w-full justify-around border-t bg-card pt-2 pb-[env(safe-area-inset-bottom,0.5rem)] md:hidden">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = pathname === item.href;

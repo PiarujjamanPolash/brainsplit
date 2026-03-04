@@ -94,7 +94,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <div className="flex flex-col md:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card px-4 md:px-8">
+        <header className="sticky top-0 z-30 flex h-auto min-h-16 items-center justify-between border-b bg-card px-4 md:px-8 pt-[env(safe-area-inset-top,0px)] pb-1">
           <h1 className="text-xl font-bold">Dashboard</h1>
           <div className="flex gap-2">
             <Button

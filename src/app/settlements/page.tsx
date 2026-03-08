@@ -305,7 +305,7 @@ export default function SettlementsPage() {
       </div>
 
       {/* Mobile Floating Action Button (FAB) */}
-      <div className="md:hidden fixed bottom-[calc(env(safe-area-inset-bottom,1rem)+4rem)] right-4 z-40">
+      <div className="md:hidden fixed bottom-24 right-4 z-40">
         <Button size="icon" className="h-14 w-14 rounded-full shadow-lg" onClick={() => setIsOpen(true)}>
           <HandCoins size={24} strokeWidth={2.5} />
         </Button>

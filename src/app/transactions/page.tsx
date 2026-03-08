@@ -11,8 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { getAgency, getTransactions, addTransaction, deleteTransaction } from '@/lib/mock-db';
-import { Transaction, Agency, TransactionType } from '@/lib/types';
-import { Plus, Trash2, Download, Loader2, ArrowUpRight, ArrowDownRight, Calendar, User, FileText } from 'lucide-react';
+import { Transaction, Agency, TransactionType, ExpenseCategory } from '@/lib/types';
+import { Plus, Trash2, Download, Loader2, ArrowUpRight, ArrowDownRight, Calendar, User, FileText, Tag } from 'lucide-react';
 import { getUSDToBDTRate, convertToUSD } from '@/lib/fx';
 
 export default function TransactionsPage() {
@@ -20,12 +20,14 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [filterType, setFilterType] = useState<TransactionType | 'all'>('all');
   const [isOpen, setIsOpen] = useState(false);
   const [fxRate, setFxRate] = useState(120);
   const [newTx, setNewTx] = useState<Partial<Transaction>>({
-    type: 'income',
+    type: 'expense',
     currency: 'USD',
     date: new Date().toISOString().split('T')[0],
+    category: undefined,
   });
 
   const loadData = async () => {
@@ -50,31 +52,42 @@ export default function TransactionsPage() {
   }, []);
 
   const handleAddTransaction = async () => {
-    if (!data || !newTx.amount || !newTx.handledBy || !newTx.description || isSubmitting) return;
+    if (!data || !newTx.amount || !newTx.handledBy || !newTx.description || isSubmitting) {
+      alert("Please fill in all required fields (Amount, Handled By, Description).");
+      return;
+    }
+
+    if (newTx.type === 'expense' && !newTx.category) {
+      alert("Please select an expense category.");
+      return;
+    }
 
     setIsSubmitting(true);
-
     const currency = (newTx.currency || 'USD') as 'USD' | 'BDT';
     const amount = Number(newTx.amount);
     const amountUSD = convertToUSD(amount, currency, fxRate);
 
     const tx: Omit<Transaction, 'id'> = {
       type: newTx.type as TransactionType,
-      currency,
       amount,
       amountUSD,
-      date: newTx.date || new Date().toISOString().split('T')[0],
-      description: newTx.description,
-      project: newTx.project || '',
-      category: newTx.category || '',
+      currency,
       handledBy: newTx.handledBy,
+      date: newTx.date || new Date().toISOString().split('T')[0],
+      description: newTx.description || '',
+      project: newTx.project || '',
+      note: newTx.note || '',
     };
+
+    if (tx.type === 'expense') {
+      tx.category = newTx.category as ExpenseCategory;
+    }
 
     try {
       await addTransaction(tx);
       await loadData();
       setIsOpen(false);
-      setNewTx({ type: 'income', currency: 'USD', date: new Date().toISOString().split('T')[0] });
+      setNewTx({ type: 'expense', currency: 'USD', date: new Date().toISOString().split('T')[0], category: undefined });
     } catch (error) {
       console.error('Error adding transaction:', error);
     } finally {
@@ -180,16 +193,42 @@ export default function TransactionsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Type</Label>
-                      <Select onValueChange={(v) => setNewTx({ ...newTx, type: v as TransactionType })} defaultValue="income">
+                      <Select onValueChange={(v) => {
+                        const type = v as TransactionType;
+                        setNewTx(prev => ({
+                          ...prev,
+                          type,
+                          category: type === 'income' ? undefined : prev.category
+                        }));
+                      }} defaultValue="expense">
                         <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue placeholder="Expense" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="income">Income</SelectItem>
-                          <SelectItem value="expense">Expense</SelectItem>
+                          <SelectItem value="expense">Expense (-)</SelectItem>
+                          <SelectItem value="income">Income (+)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {newTx.type === 'expense' && (
+                      <div className="space-y-2">
+                        <Label>Category</Label>
+                        <Select onValueChange={(v) => setNewTx({ ...newTx, category: v as ExpenseCategory })} value={newTx.category || ''}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Salary">Salary</SelectItem>
+                            <SelectItem value="Bills">Bills & Utilities</SelectItem>
+                            <SelectItem value="Online Tools">Online Tools & Software</SelectItem>
+                            <SelectItem value="Foods">Foods & Entertainment</SelectItem>
+                            <SelectItem value="Misc">Miscellaneous</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     <div className="space-y-2">
                       <Label>Currency</Label>
                       <Select onValueChange={(v) => setNewTx({ ...newTx, currency: v as 'USD' | 'BDT' })} defaultValue="USD">
@@ -304,7 +343,14 @@ export default function TransactionsPage() {
                       <TableCell className="text-muted-foreground">{tx.date}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{tx.description}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{tx.description}</span>
+                            {tx.category && (
+                              <Badge variant="outline" className="text-[10px] h-5 py-0 px-1.5 font-normal bg-muted/50">
+                                {tx.category}
+                              </Badge>
+                            )}
+                          </div>
                           {tx.project && <span className="text-xs text-muted-foreground">{tx.project}</span>}
                         </div>
                       </TableCell>
@@ -358,6 +404,7 @@ export default function TransactionsPage() {
                     <p className="text-base font-bold text-foreground truncate">{tx.description}</p>
                     <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Calendar size={12} /> {tx.date.substring(5)}</span>
+                      {tx.category && <><span>•</span> <span className="flex items-center gap-1 truncate"><Tag size={12} /> {tx.category}</span></>}
                       {tx.project && <><span>•</span> <span className="flex items-center gap-1 truncate"><FileText size={12} /> {tx.project}</span></>}
                       <span>•</span>
                       <span className="flex items-center gap-1 truncate">

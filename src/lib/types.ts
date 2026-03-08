@@ -1,5 +1,7 @@
 
 export type TransactionType = 'income' | 'expense';
+export type Currency = 'USD' | 'BDT';
+export type ExpenseCategory = 'Salary' | 'Bills' | 'Online Tools' | 'Foods' | 'Misc';
 
 export interface Partner {
   id: string;
@@ -22,8 +24,9 @@ export interface Transaction {
   amountUSD: number;
   date: string;
   description: string;
-  category?: string;
+  category?: ExpenseCategory;
   project?: string;
+  note?: string;
   handledBy: string; // partnerId
 }
 

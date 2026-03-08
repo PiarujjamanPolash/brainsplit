@@ -5,10 +5,10 @@
 
 @layer base {
   :root {
-    --background: 240 25% 98%;
-    --foreground: 240 10% 3.9%;
+    --background: 240 25% 96%; /* Slightly off-white for contrast against white cards */
+    --foreground: 240 10% 8%; /* Softer black */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 240 10% 8%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
     --primary: 240 70% 54%; /* #3B3BDA */
@@ -21,10 +21,10 @@
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 10% 89.8%;
-    --input: 240 10% 89.8%;
+    --border: 240 5% 90%;
+    --input: 240 5% 90%;
     --ring: 240 70% 54%;
-    --radius: 0.75rem;
+    --radius: 1.25rem; /* Smoother, larger border radius */
   }
 }
 

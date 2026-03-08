@@ -94,8 +94,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <div className="flex flex-col md:pl-64">
-        <header className="sticky top-0 z-30 flex h-auto min-h-16 items-center justify-between border-b bg-card px-4 md:px-8 pt-[env(safe-area-inset-top,0px)] pb-1">
-          <h1 className="text-xl font-bold">Dashboard</h1>
+        <header className="sticky top-0 z-30 flex h-auto min-h-16 items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 md:px-8 pt-[env(safe-area-inset-top,0.5rem)] pb-2 supports-[backdrop-filter]:bg-background/60">
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -109,7 +109,7 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <main className="flex-1 space-y-8 p-4 md:p-8 pb-24 md:pb-8">
+        <main className="flex-1 space-y-8 p-4 md:p-8 pb-32 md:pb-8">
           {/* Summary Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Card>
@@ -185,8 +185,8 @@ export default function DashboardPage() {
                 {/* Mobile Card View */}
                 <div className="space-y-3 md:hidden">
                   {balances.map((b) => (
-                    <div key={b.partnerId} className="flex flex-col gap-2 rounded-lg border p-3 text-sm">
-                      <div className="flex items-center justify-between border-b pb-2">
+                    <div key={b.partnerId} className="flex flex-col gap-2 rounded-2xl border border-border/50 bg-card/50 p-4 text-sm shadow-sm transition-colors hover:bg-card">
+                      <div className="flex items-center justify-between border-b border-border/50 pb-3">
                         <span className="font-bold text-base">{b.name}</span>
                         <Badge variant={b.balance > 0 ? 'destructive' : 'secondary'}>
                           {b.balance > 0 ? 'To Pay' : 'To Receive'}
@@ -223,7 +223,7 @@ export default function DashboardPage() {
                 ) : (
                   <div className="space-y-4">
                     {suggestions.map((s, idx) => (
-                      <div key={idx} className="flex items-center justify-between rounded-lg border p-3 sm:p-4 gap-2">
+                      <div key={idx} className="flex items-center justify-between rounded-2xl border border-border/50 bg-card/50 p-4 shadow-sm gap-2">
                         <div className="flex flex-col min-w-0">
                           <span className="text-[10px] font-medium text-muted-foreground uppercase">From</span>
                           <span className="font-bold truncate text-sm sm:text-base">{getPartnerName(s.from)}</span>

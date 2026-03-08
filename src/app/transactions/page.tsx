@@ -142,8 +142,8 @@ export default function TransactionsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <div className="flex flex-col md:pl-64">
-        <header className="sticky top-0 z-30 flex flex-col sm:flex-row h-auto min-h-16 items-start sm:items-center justify-between border-b bg-card px-4 md:px-8 pt-[env(safe-area-inset-top,0px)] pb-4 sm:pb-1 gap-4">
-          <h1 className="text-xl font-bold mt-4 sm:mt-0">Transactions</h1>
+        <header className="sticky top-0 z-30 flex flex-col sm:flex-row h-auto min-h-16 items-start sm:items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 md:px-8 pt-[env(safe-area-inset-top,0.5rem)] pb-4 sm:pb-2 gap-4 supports-[backdrop-filter]:bg-background/60">
+          <h1 className="text-2xl font-bold tracking-tight mt-2 sm:mt-0">Transactions</h1>
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
               <SelectTrigger className="w-[140px] h-9">
@@ -271,8 +271,8 @@ export default function TransactionsPage() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
-          <div className="rounded-lg border bg-card">
+        <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8">
+          <div className="overflow-hidden rounded-3xl border border-border/50 bg-card shadow-sm">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -70,7 +70,7 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 z-50 flex w-full justify-around border-t bg-card pt-2 pb-[env(safe-area-inset-bottom,0.5rem)] md:hidden">
+    <nav className="fixed bottom-0 left-0 z-50 flex w-full justify-around bg-background/70 backdrop-blur-xl border-t border-border/50 pt-2 pb-[env(safe-area-inset-bottom,1rem)] md:hidden supports-[backdrop-filter]:bg-background/60">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = pathname === item.href;
@@ -79,12 +79,20 @@ export function MobileNav() {
             key={item.name}
             href={item.href}
             className={cn(
-              'flex flex-col items-center gap-1 p-2 text-[10px] font-medium transition-colors',
-              isActive ? 'text-primary' : 'text-muted-foreground'
+              'relative flex flex-col items-center gap-1 p-2 min-w-[64px] transition-all duration-200 ease-out',
+              isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <Icon size={20} />
-            {item.name}
+            <div className={cn(
+              "flex items-center justify-center transition-transform duration-200",
+              isActive ? "scale-110" : "scale-100"
+            )}>
+              <Icon size={24} strokeWidth={isActive ? 2 : 1.5} />
+            </div>
+            <span className={cn(
+              "text-[10px] font-medium tracking-tight transition-all",
+              isActive ? "font-semibold" : "font-medium"
+            )}>{item.name}</span>
           </Link>
         );
       })}

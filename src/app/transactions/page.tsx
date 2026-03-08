@@ -142,7 +142,7 @@ export default function TransactionsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <div className="flex flex-col md:pl-64">
-        <header className="sticky top-0 z-30 flex flex-col sm:flex-row h-auto min-h-16 items-start sm:items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 md:px-8 pt-[env(safe-area-inset-top,0.5rem)] pb-4 sm:pb-2 gap-4 supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-30 flex flex-col sm:flex-row h-auto min-h-16 items-start sm:items-center justify-between border-b border-border/40 bg-background/60 backdrop-blur-2xl backdrop-saturate-[180%] px-4 md:px-8 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)] pb-4 sm:pb-3 gap-4">
           <div className="flex items-center gap-3 mt-2 sm:mt-0">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden md:hidden">
               <img src="/logo.png" alt="Braingig" className="h-full w-full object-cover" />

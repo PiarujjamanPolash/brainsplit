@@ -10,9 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { getAgency, getTransactions, addTransaction, deleteTransaction } from '@/lib/mock-db';
+import { getAgency, getTransactions, addTransaction, updateTransaction, deleteTransaction } from '@/lib/mock-db';
 import { Transaction, Agency, TransactionType, ExpenseCategory } from '@/lib/types';
-import { Plus, Trash2, Download, Loader2, ArrowUpRight, ArrowDownRight, Calendar, User, FileText, Tag } from 'lucide-react';
+import { Plus, Trash2, Pencil, Download, Loader2, ArrowUpRight, ArrowDownRight, Calendar, User, FileText, Tag, Clock } from 'lucide-react';
 import { getUSDToBDTRate, convertToUSD } from '@/lib/fx';
 
 export default function TransactionsPage() {
@@ -21,7 +21,10 @@ export default function TransactionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [filterType, setFilterType] = useState<TransactionType | 'all'>('all');
+  const [filterCategory, setFilterCategory] = useState<ExpenseCategory | 'all'>('all');
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [fxRate, setFxRate] = useState(120);
   const [newTx, setNewTx] = useState<Partial<Transaction>>({
     type: 'expense',
@@ -51,7 +54,21 @@ export default function TransactionsPage() {
     loadData();
   }, []);
 
-  const handleAddTransaction = async () => {
+  const openNewTransaction = () => {
+    setIsEditing(false);
+    setEditingId(null);
+    setNewTx({ type: 'expense', currency: 'USD', date: new Date().toISOString().split('T')[0], category: undefined, description: '', amount: undefined, handledBy: undefined, project: '', note: '' });
+    setIsOpen(true);
+  };
+
+  const openEditTransaction = (tx: Transaction) => {
+    setIsEditing(true);
+    setEditingId(tx.id);
+    setNewTx({ ...tx });
+    setIsOpen(true);
+  };
+
+  const handleAddOrUpdateTransaction = async () => {
     if (!data || !newTx.amount || !newTx.handledBy || !newTx.description || isSubmitting) {
       alert("Please fill in all required fields (Amount, Handled By, Description).");
       return;
@@ -84,10 +101,30 @@ export default function TransactionsPage() {
     }
 
     try {
-      await addTransaction(tx);
+      if (isEditing && editingId) {
+        // Find existing to preserve createdAt/By
+        const existingTx = data.transactions.find(t => t.id === editingId);
+        await updateTransaction({
+          ...tx,
+          id: editingId,
+          createdAt: existingTx?.createdAt,
+          createdBy: existingTx?.createdBy,
+          updatedAt: new Date().toISOString(),
+          updatedBy: newTx.handledBy
+        } as Transaction);
+      } else {
+        await addTransaction({
+          ...tx,
+          createdAt: new Date().toISOString(),
+          createdBy: newTx.handledBy
+        });
+      }
+
       await loadData();
       setIsOpen(false);
       setNewTx({ type: 'expense', currency: 'USD', date: new Date().toISOString().split('T')[0], category: undefined });
+      setIsEditing(false);
+      setEditingId(null);
     } catch (error) {
       console.error('Error adding transaction:', error);
     } finally {
@@ -111,10 +148,19 @@ export default function TransactionsPage() {
   );
   if (!data) return null;
 
-  const availableMonths = Array.from(new Set(data.transactions.map(t => t.date.substring(0, 7)))).sort().reverse();
-  const displayedTransactions = data.transactions
-    .filter(t => selectedMonth === 'all' || t.date.startsWith(selectedMonth))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const availableMonths = data ? Array.from(new Set(data.transactions.map(t => t.date.substring(0, 7)))).sort().reverse() : [];
+
+  let displayedTransactions = data ? data.transactions : [];
+  if (selectedMonth !== 'all') {
+    displayedTransactions = displayedTransactions.filter(t => t.date.startsWith(selectedMonth));
+  }
+  if (filterType !== 'all') {
+    displayedTransactions = displayedTransactions.filter(t => t.type === filterType);
+  }
+  if (filterCategory !== 'all') {
+    displayedTransactions = displayedTransactions.filter(t => t.category === filterCategory && t.type === 'expense');
+  }
+  displayedTransactions = displayedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleExportCSV = () => {
     if (!displayedTransactions.length) return;
@@ -176,18 +222,41 @@ export default function TransactionsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filterType} onValueChange={(val) => setFilterType(val as TransactionType | 'all')}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterCategory} onValueChange={(val) => setFilterCategory(val as ExpenseCategory | 'all')}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="Salary">Salary</SelectItem>
+                <SelectItem value="Bills">Bills & Utilities</SelectItem>
+                <SelectItem value="Online Tools">Online Tools & Software</SelectItem>
+                <SelectItem value="Foods">Foods & Entertainment</SelectItem>
+                <SelectItem value="Misc">Miscellaneous</SelectItem>
+              </SelectContent>
+            </Select>
             <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handleExportCSV} disabled={!displayedTransactions.length}>
               <Download size={16} /> <span className="hidden sm:inline">Export</span>
             </Button>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="hidden md:flex h-9 gap-2 shadow-sm">
+                <Button size="sm" className="hidden md:flex h-9 gap-2 shadow-sm" onClick={openNewTransaction}>
                   <Plus size={16} /> <span>Add New</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Add Transaction</DialogTitle>
+                  <DialogTitle>{isEditing ? 'Edit Transaction' : 'Record New Transaction'}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -200,7 +269,7 @@ export default function TransactionsPage() {
                           type,
                           category: type === 'income' ? undefined : prev.category
                         }));
-                      }} defaultValue="expense">
+                      }} defaultValue="expense" value={newTx.type}>
                         <SelectTrigger>
                           <SelectValue placeholder="Expense" />
                         </SelectTrigger>
@@ -231,7 +300,7 @@ export default function TransactionsPage() {
 
                     <div className="space-y-2">
                       <Label>Currency</Label>
-                      <Select onValueChange={(v) => setNewTx({ ...newTx, currency: v as 'USD' | 'BDT' })} defaultValue="USD">
+                      <Select onValueChange={(v) => setNewTx({ ...newTx, currency: v as 'USD' | 'BDT' })} defaultValue="USD" value={newTx.currency}>
                         <SelectTrigger>
                           <SelectValue placeholder="USD" />
                         </SelectTrigger>
@@ -253,6 +322,7 @@ export default function TransactionsPage() {
                           type="number"
                           placeholder="0.00"
                           className="pl-8"
+                          value={newTx.amount || ''}
                           onChange={(e) => setNewTx({ ...newTx, amount: Number(e.target.value) })}
                         />
                       </div>
@@ -267,12 +337,13 @@ export default function TransactionsPage() {
                     <Label>Description</Label>
                     <Input
                       placeholder="e.g. Website payment"
+                      value={newTx.description || ''}
                       onChange={(e) => setNewTx({ ...newTx, description: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Handled By</Label>
-                    <Select onValueChange={(v) => setNewTx({ ...newTx, handledBy: v })}>
+                    <Select onValueChange={(v) => setNewTx({ ...newTx, handledBy: v })} value={newTx.handledBy}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select partner" />
                       </SelectTrigger>
@@ -286,7 +357,7 @@ export default function TransactionsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Project (Optional)</Label>
-                      <Input placeholder="Project name" onChange={(e) => setNewTx({ ...newTx, project: e.target.value })} />
+                      <Input placeholder="Project name" value={newTx.project || ''} onChange={(e) => setNewTx({ ...newTx, project: e.target.value })} />
                     </div>
                     <div className="space-y-2">
                       <Label>Date</Label>
@@ -298,16 +369,25 @@ export default function TransactionsPage() {
                     </div>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button onClick={handleAddTransaction} disabled={isSubmitting} className="w-full">
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      'Create Transaction'
+                {isEditing && (newTx.createdAt || newTx.updatedAt) && (
+                  <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded-md flex flex-col gap-1 mt-2 border border-border/40">
+                    {newTx.createdAt && (
+                      <div className="flex items-center gap-1">
+                        <Clock size={10} /> Added by {data.agency.partners.find(p => p.id === newTx.createdBy)?.name || 'Unknown'} on {new Date(newTx.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                      </div>
                     )}
+                    {newTx.updatedAt && (
+                      <div className="flex items-center gap-1">
+                        <Clock size={10} /> Last updated by {data.agency.partners.find(p => p.id === newTx.updatedBy)?.name || 'Unknown'} on {new Date(newTx.updatedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button onClick={handleAddOrUpdateTransaction} className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                    ) : (isEditing ? 'Save Changes' : 'Record Transaction')}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -373,9 +453,14 @@ export default function TransactionsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(tx.id)}>
-                          <Trash2 size={16} className="text-muted-foreground hover:text-destructive" />
-                        </Button>
+                        <div className="flex justify-end items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEditTransaction(tx)}>
+                            <Pencil size={16} className="text-muted-foreground hover:text-primary" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(tx.id)}>
+                            <Trash2 size={16} className="text-muted-foreground hover:text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -424,16 +509,28 @@ export default function TransactionsPage() {
                       </span>
                     )}
                     <button
+                      onClick={() => openEditTransaction(tx)}
+                      className="absolute top-1 right-8 p-2 text-muted-foreground/40 hover:text-primary active:text-primary transition-colors opacity-0 md:opacity-100 focus:opacity-100"
+                      aria-label="Edit transaction"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
                       onClick={() => handleDelete(tx.id)}
                       className="absolute top-1 right-2 p-2 text-muted-foreground/30 hover:text-destructive active:text-destructive transition-colors opacity-0 md:opacity-100 focus:opacity-100"
                       aria-label="Delete transaction"
                     >
                       <Trash2 size={14} />
                     </button>
-                    {/* Simplified mobile delete - usually revealed via swipe or a small persistent icon */}
-                    <button onClick={() => handleDelete(tx.id)} className="mt-1 text-muted-foreground border border-border/50 rounded-full p-1 -mr-1">
-                      <Trash2 size={12} />
-                    </button>
+                    {/* Simplified mobile actions */}
+                    <div className="mt-1 flex gap-2">
+                      <button onClick={() => openEditTransaction(tx)} className="text-muted-foreground border border-border/50 rounded-full p-1">
+                        <Pencil size={12} />
+                      </button>
+                      <button onClick={() => handleDelete(tx.id)} className="text-muted-foreground border border-border/50 rounded-full p-1 -mr-1">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -445,7 +542,7 @@ export default function TransactionsPage() {
 
       {/* Mobile Floating Action Button (FAB) */}
       <div className="md:hidden fixed bottom-24 right-4 z-40">
-        <Button size="icon" className="h-14 w-14 rounded-full shadow-lg" onClick={() => setIsOpen(true)}>
+        <Button size="icon" className="h-14 w-14 rounded-full shadow-lg" onClick={openNewTransaction}>
           <Plus size={24} strokeWidth={2.5} />
         </Button>
       </div>

@@ -28,6 +28,10 @@ export interface Transaction {
   project?: string;
   note?: string;
   handledBy: string; // partnerId
+  createdAt?: string;
+  createdBy?: string;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 export interface Settlement {

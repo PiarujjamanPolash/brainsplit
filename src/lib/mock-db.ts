@@ -56,6 +56,11 @@ export async function addTransaction(transaction: Omit<Transaction, 'id'>, agenc
   return docRef.id;
 }
 
+export async function updateTransaction(transaction: Transaction, agencyId: string = DEFAULT_AGENCY_ID) {
+  const docRef = doc(db, 'agencies', agencyId, 'transactions', transaction.id);
+  await updateDoc(docRef, { ...transaction });
+}
+
 // Settlement Operations
 export async function getSettlements(agencyId: string = DEFAULT_AGENCY_ID): Promise<Settlement[]> {
   const colRef = collection(db, 'agencies', agencyId, 'settlements');

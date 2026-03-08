@@ -95,7 +95,12 @@ export default function DashboardPage() {
       <Navigation />
       <div className="flex flex-col md:pl-64">
         <header className="sticky top-0 z-30 flex h-auto min-h-16 items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 md:px-8 pt-[env(safe-area-inset-top,0.5rem)] pb-2 supports-[backdrop-filter]:bg-background/60">
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden md:hidden">
+              <img src="/logo.png" alt="Braingig" className="h-full w-full object-cover" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          </div>
           <div className="flex gap-2">
             <Button
               variant="outline"

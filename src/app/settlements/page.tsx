@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getAgency, getSettlements, addSettlement, deleteSettlement } from '@/lib/mock-db';
 import { Settlement, Agency } from '@/lib/types';
-import { Plus, Trash2, HandCoins, ArrowRight, Globe } from 'lucide-react';
+import { Plus, Trash2, HandCoins, ArrowRight, Calendar, User, Globe } from 'lucide-react';
 import { getUSDToBDTRate, convertToUSD } from '@/lib/fx';
 
 export default function SettlementsPage() {
@@ -92,12 +92,17 @@ export default function SettlementsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <div className="flex flex-col md:pl-64">
-        <header className="sticky top-0 z-30 flex h-auto min-h-16 items-center justify-between border-b bg-card px-4 md:px-8 pt-[env(safe-area-inset-top,0px)] pb-1">
-          <h1 className="text-xl font-bold">Settlements</h1>
+        <header className="sticky top-0 z-30 flex h-auto min-h-16 items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 md:px-8 pt-[env(safe-area-inset-top,0.5rem)] pb-2 supports-[backdrop-filter]:bg-background/60">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden md:hidden">
+              <img src="/logo.png" alt="Braingig" className="h-full w-full object-cover" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Settlements</h1>
+          </div>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus size={18} /> Record Settlement
+              <Button size="sm" className="hidden md:flex h-9 gap-2 shadow-sm">
+                <Plus size={16} /> <span>Record Settlement</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -186,8 +191,10 @@ export default function SettlementsPage() {
           </Dialog>
         </header>
 
-        <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
-          <div className="rounded-lg border bg-card">
+        <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8">
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-hidden rounded-3xl border border-border/50 bg-card shadow-sm">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -240,8 +247,70 @@ export default function SettlementsPage() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {data.settlements.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground border border-dashed rounded-2xl">
+                No settlements recorded yet. Use the suggestion tool!
+              </div>
+            ) : (
+              data.settlements.map((s) => (
+                <div key={s.id} className="relative flex items-center gap-3 p-4 rounded-2xl border border-border/50 bg-card shadow-sm">
+                  {/* Icon Indicator */}
+                  <div className="flex-shrink-0 flex items-center justify-center p-3 rounded-2xl bg-primary/10 text-primary">
+                    <HandCoins size={20} strokeWidth={2.5} />
+                  </div>
+
+                  {/* Settlement Details */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div className="flex items-center gap-1.5 text-base font-bold text-foreground truncate">
+                      <span className="truncate">{data.agency.partners.find(p => p.id === s.fromPartnerId)?.name.split(' ')[0]}</span>
+                      <ArrowRight size={14} className="text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{data.agency.partners.find(p => p.id === s.toPartnerId)?.name.split(' ')[0]}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Calendar size={12} /> {s.date.substring(5)}</span>
+                      {s.note && <><span>•</span> <span className="truncate max-w-[120px]">{s.note}</span></>}
+                    </div>
+                  </div>
+
+                  {/* Amounts & Options */}
+                  <div className="flex flex-col items-end flex-shrink-0 ml-2">
+                    <span className="text-base font-bold tracking-tight text-primary">
+                      {s.currency === 'USD' ? '$' : '৳'}{s.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </span>
+                    {s.currency === 'BDT' && (
+                      <span className="text-[10px] text-muted-foreground">
+                        ${s.amountUSD.toFixed(1)}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleDelete(s.id)}
+                      className="absolute top-1 right-2 p-2 text-muted-foreground/30 hover:text-destructive active:text-destructive transition-colors opacity-0 md:opacity-100 focus:opacity-100"
+                      aria-label="Delete settlement"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(s.id)} className="mt-1 text-muted-foreground border border-border/50 rounded-full p-1 -mr-1">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
         </main>
       </div>
+
+      {/* Mobile Floating Action Button (FAB) */}
+      <div className="md:hidden fixed bottom-[calc(env(safe-area-inset-bottom,1rem)+4rem)] right-4 z-40">
+        <Button size="icon" className="h-14 w-14 rounded-full shadow-lg" onClick={() => setIsOpen(true)}>
+          <HandCoins size={24} strokeWidth={2.5} />
+        </Button>
+      </div>
+
       <MobileNav />
     </div>
   );

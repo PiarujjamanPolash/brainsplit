@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { getAgency, getTransactions, addTransaction, deleteTransaction } from '@/lib/mock-db';
 import { Transaction, Agency, TransactionType } from '@/lib/types';
-import { Plus, Trash2, Filter, Receipt, Globe, Download, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Download, Loader2, ArrowUpRight, ArrowDownRight, Calendar, User, FileText } from 'lucide-react';
 import { getUSDToBDTRate, convertToUSD } from '@/lib/fx';
 
 export default function TransactionsPage() {
@@ -143,7 +143,12 @@ export default function TransactionsPage() {
       <Navigation />
       <div className="flex flex-col md:pl-64">
         <header className="sticky top-0 z-30 flex flex-col sm:flex-row h-auto min-h-16 items-start sm:items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 md:px-8 pt-[env(safe-area-inset-top,0.5rem)] pb-4 sm:pb-2 gap-4 supports-[backdrop-filter]:bg-background/60">
-          <h1 className="text-2xl font-bold tracking-tight mt-2 sm:mt-0">Transactions</h1>
+          <div className="flex items-center gap-3 mt-2 sm:mt-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden md:hidden">
+              <img src="/logo.png" alt="Braingig" className="h-full w-full object-cover" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
+          </div>
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
               <SelectTrigger className="w-[140px] h-9">
@@ -163,8 +168,8 @@ export default function TransactionsPage() {
             </Button>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="h-9 gap-2">
-                  <Plus size={16} /> <span className="hidden sm:inline">Add New</span>
+                <Button size="sm" className="hidden md:flex h-9 gap-2 shadow-sm">
+                  <Plus size={16} /> <span>Add New</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
@@ -272,7 +277,9 @@ export default function TransactionsPage() {
         </header>
 
         <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8">
-          <div className="overflow-hidden rounded-3xl border border-border/50 bg-card shadow-sm">
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-hidden rounded-3xl border border-border/50 bg-card shadow-sm">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -309,7 +316,9 @@ export default function TransactionsPage() {
                       </TableCell>
                       <TableCell className="text-right font-bold">
                         <div className="flex flex-col items-end">
-                          <span>{tx.currency === 'USD' ? '$' : '৳'}{tx.amount.toLocaleString()}</span>
+                          <span className={tx.type === 'income' ? 'text-emerald-600' : 'text-foreground'}>
+                            {tx.type === 'income' ? '+' : '-'}{tx.currency === 'USD' ? '$' : '৳'}{tx.amount.toLocaleString()}
+                          </span>
                           {tx.currency === 'BDT' && (
                             <span className="text-[10px] font-normal text-muted-foreground">
                               ${tx.amountUSD.toFixed(2)}
@@ -328,8 +337,72 @@ export default function TransactionsPage() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {displayedTransactions.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground border border-dashed rounded-2xl">
+                {data.transactions.length === 0 ? 'No transactions yet.' : 'No transactions found.'}
+              </div>
+            ) : (
+              displayedTransactions.map((tx) => (
+                <div key={tx.id} className="relative flex items-center gap-3 p-4 rounded-2xl border border-border/50 bg-card shadow-sm">
+                  {/* Icon Indicator */}
+                  <div className={`flex-shrink-0 flex items-center justify-center p-3 rounded-2xl ${tx.type === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+                    }`}>
+                    {tx.type === 'income' ? <ArrowUpRight size={20} strokeWidth={2.5} /> : <ArrowDownRight size={20} strokeWidth={2.5} />}
+                  </div>
+
+                  {/* Transaction Details */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <p className="text-base font-bold text-foreground truncate">{tx.description}</p>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Calendar size={12} /> {tx.date.substring(5)}</span>
+                      {tx.project && <><span>•</span> <span className="flex items-center gap-1 truncate"><FileText size={12} /> {tx.project}</span></>}
+                      <span>•</span>
+                      <span className="flex items-center gap-1 truncate">
+                        <User size={12} /> {data.agency.partners.find(p => p.id === tx.handledBy)?.name.split(' ')[0] || '?'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Amounts & Options */}
+                  <div className="flex flex-col items-end flex-shrink-0 ml-2">
+                    <span className={`text-base font-bold tracking-tight ${tx.type === 'income' ? 'text-emerald-600' : 'text-foreground'}`}>
+                      {tx.type === 'income' ? '+' : ''}{tx.currency === 'USD' ? '$' : '৳'}{tx.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </span>
+                    {tx.currency === 'BDT' && (
+                      <span className="text-[10px] text-muted-foreground">
+                        ${tx.amountUSD.toFixed(1)}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleDelete(tx.id)}
+                      className="absolute top-1 right-2 p-2 text-muted-foreground/30 hover:text-destructive active:text-destructive transition-colors opacity-0 md:opacity-100 focus:opacity-100"
+                      aria-label="Delete transaction"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    {/* Simplified mobile delete - usually revealed via swipe or a small persistent icon */}
+                    <button onClick={() => handleDelete(tx.id)} className="mt-1 text-muted-foreground border border-border/50 rounded-full p-1 -mr-1">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
         </main>
       </div>
+
+      {/* Mobile Floating Action Button (FAB) */}
+      <div className="md:hidden fixed bottom-[calc(env(safe-area-inset-bottom,1rem)+4rem)] right-4 z-40">
+        <Button size="icon" className="h-14 w-14 rounded-full shadow-lg" onClick={() => setIsOpen(true)}>
+          <Plus size={24} strokeWidth={2.5} />
+        </Button>
+      </div>
+
       <MobileNav />
     </div>
   );

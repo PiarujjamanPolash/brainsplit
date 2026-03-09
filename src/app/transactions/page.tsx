@@ -104,14 +104,18 @@ export default function TransactionsPage() {
       if (isEditing && editingId) {
         // Find existing to preserve createdAt/By
         const existingTx = data.transactions.find(t => t.id === editingId);
-        await updateTransaction({
+
+        const updatePayload: any = {
           ...tx,
           id: editingId,
-          createdAt: existingTx?.createdAt,
-          createdBy: existingTx?.createdBy,
           updatedAt: new Date().toISOString(),
           updatedBy: newTx.handledBy
-        } as Transaction);
+        };
+
+        if (existingTx?.createdAt) updatePayload.createdAt = existingTx.createdAt;
+        if (existingTx?.createdBy) updatePayload.createdBy = existingTx.createdBy;
+
+        await updateTransaction(updatePayload as Transaction);
       } else {
         await addTransaction({
           ...tx,
@@ -407,6 +411,7 @@ export default function TransactionsPage() {
                   <TableHead>Partner</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="pl-6 w-[200px]">Activity Log</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -449,6 +454,24 @@ export default function TransactionsPage() {
                             <span className="text-[10px] font-normal text-muted-foreground">
                               ${tx.amountUSD.toFixed(2)}
                             </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="pl-6">
+                        <div className="flex flex-col gap-1 text-[10px] text-muted-foreground min-w-[140px]">
+                          {tx.createdAt ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium text-foreground/70">Added:</span>
+                              <span>{new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })} by {data.agency.partners.find(p => p.id === tx.createdBy)?.name.split(' ')[0] || '?'}</span>
+                            </div>
+                          ) : (
+                            <div className="text-muted-foreground/40 italic">Legacy record</div>
+                          )}
+                          {tx.updatedAt && (
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="font-medium text-foreground/70">Edited:</span>
+                              <span>{new Date(tx.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })} by {data.agency.partners.find(p => p.id === tx.updatedBy)?.name.split(' ')[0] || '?'}</span>
+                            </div>
                           )}
                         </div>
                       </TableCell>
